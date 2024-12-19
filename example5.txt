@@ -1,0 +1,6 @@
+var i,j,k;
+begin
+  i := 10;
+  j := 5;
+  k:=i/j;
+end.

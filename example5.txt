@@ -1,6 +1,9 @@
 var i,j,k;
 begin
-  i := 10;
-  j := 5;
-  k:=i/j;
+  i := 10;/*vusivf*/
+  j := 5;/* x=a*b */
+  k:=i/j;//xuohi
+//xuibx
+/*uhsi
+hiioh*/
 end.

@@ -62,13 +62,15 @@ void getsym(void)
             getch();
             if(ch == '*'){
                 getch();
-                while(ch!='*')
+                while(1){
                     getch();
-                if(ch=='*'){
-                    getch();
-                    if(ch=='/')
+                    if(ch=='*'){
                         getch();
+                        if(ch=='/')
+                            break;
+                    }
                 }
+                getch();
             }
             else if(ch == '/'){
                 while(cc!=ll)

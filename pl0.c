@@ -1,4 +1,4 @@
-    // pl0 compiler source code
+// pl0 compiler source code
 
 #pragma warning(disable:4996)
 
@@ -56,31 +56,34 @@ void getsym(void)
 	int i, k;
 	char a[MAXIDLEN + 1];
 
+	// while (ch == ' '||ch == '\t')
+	// 	getch();
+	
 	while (ch == ' '||ch == '\t'||ch == '/'){
 		if(ch == '/'){
             char tch=ch;
             getch();
             if(ch == '*'){
                 getch();
-                while(1){
+                while(ch!='*')
                     getch();
-                    if(ch=='*'){
+                if(ch=='*'){
+                    getch();
+                    if(ch=='/')
                         getch();
-                        if(ch=='/')
-                            break;
-                    }
                 }
-                getch();
             }
             else if(ch == '/'){
                 while(cc!=ll)
                     getch();
             }
-            else{
-                ch=tch;
-                cc--;
-                break;
-            }
+            else
+			{
+				ch=tch;
+				cc --;
+				break;
+			}
+
         }
         else
             getch();
@@ -163,6 +166,29 @@ void getsym(void)
 		{
 			sym = SYM_LES;     // <
 		}
+	}
+	else if (ch == '&')
+	{
+		getch();
+		if(ch == '&')
+		{
+			sym = SYM_AND;
+			getch();
+		}
+	}
+	else if (ch == '|')
+	{
+		getch();
+		if(ch == '|')
+		{
+			sym = SYM_OR;
+			getch();
+		}
+	}
+	else if (ch == '!')
+	{
+		sym = SYM_NOT;
+		getch();
 	}
 	else
 	{ // other tokens
@@ -303,7 +329,7 @@ void vardeclaration(void)
 void listcode(int from, int to)
 {
 	int i;
-
+	
 	printf("\n");
 	for (i = from; i < to; i++)
 	{
@@ -318,7 +344,7 @@ void factor(symset fsys)
 	void expression(symset fsys);
 	int i;
 	symset set;
-
+	
 	test(facbegsys, fsys, 24); // The symbol can not be as the beginning of an expression.
 
 	if (inset(sym, facbegsys))
@@ -374,11 +400,17 @@ void factor(symset fsys)
 			}
 		}
 		else if(sym == SYM_MINUS) // UMINUS,  Expr -> '-' Expr
-		{
-			 getsym();
-			 factor(fsys);
-			 gen(OPR, 0, OPR_NEG);
+		{  
+			getsym();
+			factor(fsys);
+			gen(OPR, 0, OPR_NEG);
 		}
+		// else if(sym == SYM_NOT) // UMINUS,  Expr -> '!' Expr
+		// {  
+		// 	getsym();
+		// 	factor(fsys);
+		// 	gen(OPR, 0, OPR_NOT);
+		// }
 		test(fsys, createset(SYM_LPAREN, SYM_NULL), 23);
 	} // if
 } // factor
@@ -388,7 +420,7 @@ void term(symset fsys)
 {
 	int mulop;
 	symset set;
-
+	
 	set = uniteset(fsys, createset(SYM_TIMES, SYM_SLASH, SYM_NULL));
 	factor(set);
 	while (sym == SYM_TIMES || sym == SYM_SLASH)
@@ -414,10 +446,11 @@ void expression(symset fsys)
 	int addop;
 	symset set;
 
-	set = uniteset(fsys, createset(SYM_PLUS, SYM_MINUS, SYM_NULL));
+	set = uniteset(fsys, createset( SYM_PLUS, SYM_MINUS, SYM_AND, SYM_OR, SYM_EQU, SYM_GEQ, SYM_GTR, SYM_LEQ, SYM_LES, SYM_NOT, SYM_NULL));
+	
 
 	term(set);
-	while (sym == SYM_PLUS || sym == SYM_MINUS)
+	while (sym == SYM_PLUS || sym == SYM_MINUS )
 	{
 		addop = sym;
 		getsym();
@@ -447,6 +480,13 @@ void condition(symset fsys)
 		expression(fsys);
 		gen(OPR, 0, 6);
 	}
+	else if(sym == SYM_NOT)
+	{
+		getsym();
+		expression(fsys);
+		gen(OPR, 0, OPR_NOT);
+		condition(fsys);
+	}
 	else
 	{
 		set = uniteset(relset, fsys);
@@ -456,36 +496,117 @@ void condition(symset fsys)
 		{
 			error(20);
 		}
+		// else if(sym == SYM_AND || sym == SYM_OR || sym == SYM_THEN)
+		// {
+		// 	while (sym != SYM_THEN)
+		// 	{
+		// 		if(sym == SYM_AND)
+		// 		{
+		// 			int cx1 = cx;
+		// 			gen(JPC1, 0, 0);
+		// 			getsym();
+		// 			if(sym == SYM_NOT)
+		// 			{
+		// 				getsym();
+		// 				expression(fsys);
+		// 				gen(OPR, 0, OPR_NOT);
+		// 			}
+		// 			else
+		// 				expression(fsys);
+		// 			gen(OPR, 0, OPR_AND);
+		// 			code[cx1].a = cx;
+		// 		}
+		// 		else if(sym == SYM_OR)
+		// 		{
+		// 			int cx1 = cx;
+		// 			gen(JPC2, 0, 0);
+		// 			getsym();
+		// 			condition(fsys);
+		// 			gen(OPR, 0, OPR_OR);
+		// 			code[cx1].a = cx;
+		// 		}
+		// 	}
+		// }
 		else
 		{
-			relop = sym;
-			getsym();
-			expression(fsys);
-			switch (relop)
+			while(sym != SYM_THEN)
 			{
-			case SYM_EQU:
-				gen(OPR, 0, OPR_EQU);
-				break;
-			case SYM_NEQ:
-				gen(OPR, 0, OPR_NEQ);
-				break;
-			case SYM_LES:
-				gen(OPR, 0, OPR_LES);
-				break;
-			case SYM_GEQ:
-				gen(OPR, 0, OPR_GEQ);
-				break;
-			case SYM_GTR:
-				gen(OPR, 0, OPR_GTR);
-				break;
-			case SYM_LEQ:
-				gen(OPR, 0, OPR_LEQ);
-				break;
-			} // switch
+				relop = sym;
+				// getsym();
+				// expression(fsys);
+				int cx1,cx2;
+				switch (relop)
+				{
+				case SYM_EQU:
+					getsym();
+					expression(fsys);
+					gen(OPR, 0, OPR_EQU);
+					break;
+				case SYM_NEQ:
+					getsym();
+					expression(fsys);
+					gen(OPR, 0, OPR_NEQ);
+					break;
+				case SYM_LES:
+					getsym();
+					expression(fsys);				
+					gen(OPR, 0, OPR_LES);
+					break;
+				case SYM_GEQ:
+					getsym();
+					expression(fsys);
+					gen(OPR, 0, OPR_GEQ);
+					break;
+				case SYM_GTR:
+					getsym();
+					expression(fsys);
+					gen(OPR, 0, OPR_GTR);
+					break;
+				case SYM_LEQ:
+					getsym();
+					expression(fsys);
+					gen(OPR, 0, OPR_LEQ);
+					break;
+				case SYM_AND:
+					cx1 = cx;
+					gen(JPC1, 0, 0);
+					getsym();
+					if(sym == SYM_NOT)
+					{
+						getsym();
+						expression(fsys);
+						gen(OPR, 0, OPR_NOT);
+					}
+					else
+						expression(fsys);
+					gen(OPR, 0, OPR_AND);
+					code[cx1].a = cx;
+					break;
+				case SYM_OR:
+					cx2 = cx;
+					gen(JPC2, 0, 0);
+					getsym();
+					condition(fsys);
+					gen(OPR, 0, OPR_OR);
+					code[cx2].a = cx;
+					break;
+				} // switch
+			}//while
 		} // else
 	} // else
 } // condition
 
+void and_condition(symset fsys)
+{
+
+}
+
+void or_condition(symset fsys)
+{
+	int orop;
+	symset set;
+
+}
 //////////////////////////////////////////////////////////////////////
 void statement(symset fsys)
 {
@@ -541,11 +662,11 @@ void statement(symset fsys)
 			}
 			else
 			{
-				error(15); // A constant or variable can not be called.
+				error(15); // A constant or variable can not be called. 
 			}
 			getsym();
 		}
-	}
+	} 
 	else if (sym == SYM_IF)
 	{ // if statement
 		getsym();
@@ -565,7 +686,7 @@ void statement(symset fsys)
 		cx1 = cx;
 		gen(JPC, 0, 0);
 		statement(fsys);
-		code[cx1].a = cx;
+		code[cx1].a = cx;	
 	}
 	else if (sym == SYM_BEGIN)
 	{ // block
@@ -621,7 +742,7 @@ void statement(symset fsys)
 	}
 	test(fsys, phi, 19);
 } // statement
-
+			
 //////////////////////////////////////////////////////////////////////
 void block(symset fsys)
 {
@@ -762,7 +883,7 @@ void block(symset fsys)
 int base(int stack[], int currentLevel, int levelDiff)
 {
 	int b = currentLevel;
-
+	
 	while (levelDiff--)
 		b = stack[b];
 	return b;
@@ -786,6 +907,7 @@ void interpret()
 	stack[1] = stack[2] = stack[3] = 0;
 	do
 	{
+		//printf("stack: %d opcode: %d \n",stack[top], i.f);
 		i = code[pc++];
 		switch (i.f)
 		{
@@ -852,6 +974,17 @@ void interpret()
 				top--;
 				stack[top] = stack[top] <= stack[top + 1];
 				break;
+			case OPR_NOT:
+				stack[top] = !stack[top];
+				break;
+			case OPR_AND:
+				top--;
+				stack[top] = stack[top] && stack[top + 1];
+				break;
+			case OPR_OR:
+				top--;
+				stack[top] = stack[top] || stack[top + 1];
+				break;
 			} // switch
 			break;
 		case LOD:
@@ -880,6 +1013,13 @@ void interpret()
 			if (stack[top] == 0)
 				pc = i.a;
 			top--;
+		case JPC1:
+			if	(stack[top] == 0)
+				pc = i.a;
+			break;
+		case JPC2:
+			if	(stack[top] != 0)
+				pc = i.a;
 			break;
 		} // switch
 	}
@@ -905,12 +1045,12 @@ void main ()
 	}
 
 	phi = createset(SYM_NULL);
-	relset = createset(SYM_EQU, SYM_NEQ, SYM_LES, SYM_LEQ, SYM_GTR, SYM_GEQ, SYM_NULL);
-
+	relset = createset(SYM_EQU, SYM_NEQ, SYM_LES, SYM_LEQ, SYM_GTR, SYM_GEQ, SYM_AND, SYM_OR, SYM_NOT, SYM_THEN, SYM_NULL);
+	
 	// create begin symbol sets
 	declbegsys = createset(SYM_CONST, SYM_VAR, SYM_PROCEDURE, SYM_NULL);
 	statbegsys = createset(SYM_BEGIN, SYM_CALL, SYM_IF, SYM_WHILE, SYM_NULL);
-	facbegsys = createset(SYM_IDENTIFIER, SYM_NUMBER, SYM_LPAREN, SYM_MINUS, SYM_NULL);
+	facbegsys = createset(SYM_IDENTIFIER, SYM_NUMBER, SYM_LPAREN, SYM_MINUS, SYM_NOT, SYM_AND, SYM_OR, SYM_THEN, SYM_NULL);
 
 	err = cc = cx = ll = 0; // initialize global variables
 	ch = ' ';

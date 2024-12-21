@@ -1,18 +1,20 @@
 #include <stdio.h>
 
 #define NRW        11     // number of reserved words
-#define TXMAX      500    // length of identifier table
+#define TXMAX      500    // length of identifier table or array information table
 #define MAXNUMLEN  14     // maximum number of digits in numbers
-#define NSYM       10     // maximum number of symbols in array ssym and csym
+#define NSYM       17     // maximum number of symbols in array ssym and csym
 #define MAXIDLEN   10     // length of identifiers
 
 #define MAXADDRESS 32767  // maximum address
 #define MAXLEVEL   32     // maximum depth of nesting block
 #define CXMAX      500    // size of code array
 
-#define MAXSYM     30     // maximum number of symbols  
+#define MAXSYM     37     // maximum number of symbols  
 
 #define STACKSIZE  1000   // maximum storage
+
+#define MAXDIM 10	// maximum dimension of array
 
 enum symtype
 {
@@ -45,17 +47,26 @@ enum symtype
 	SYM_CALL,
 	SYM_CONST,
 	SYM_VAR,
-	SYM_PROCEDURE
+	SYM_PROCEDURE,
+	SYM_AND,
+	SYM_OR,
+	SYM_NOT,
+	SYM_LBRACKET,
+	SYM_RBRACKET,
+	SYM_LBRACE,
+	SYM_RBRACE
 };
 
 enum idtype
 {
-	ID_CONSTANT, ID_VARIABLE, ID_PROCEDURE
+	ID_CONSTANT, ID_VARIABLE, ID_PROCEDURE, ID_ARRAY
 };
 
 enum opcode
 {
-	LIT, OPR, LOD, STO, CAL, INT, JMP, JPC
+	LIT, OPR, LOD, STO, CAL, INT, JMP, JPC, 
+	JPC1, JPC2,
+	LEA, STA, LDA
 };
 
 enum oprcode
@@ -63,7 +74,7 @@ enum oprcode
 	OPR_RET, OPR_NEG, OPR_ADD, OPR_MIN,
 	OPR_MUL, OPR_DIV, OPR_ODD, OPR_EQU,
 	OPR_NEQ, OPR_LES, OPR_LEQ, OPR_GTR,
-	OPR_GEQ
+	OPR_GEQ, OPR_AND, OPR_OR, OPR_NOT
 };
 
 
@@ -96,7 +107,7 @@ char* err_msg[] =
 /* 16 */    "'then' expected.",
 /* 17 */    "';' or 'end' expected.",
 /* 18 */    "'do' expected.",
-/* 19 */    ".",
+/* 19 */    "Incorrect symbol.",
 /* 20 */    "Relative operators expected.",
 /* 21 */    "Procedure identifier can not be in an expression.",
 /* 22 */    "Missing ')'.",
@@ -109,7 +120,12 @@ char* err_msg[] =
 /* 29 */    "",
 /* 30 */    "",
 /* 31 */    "",
-/* 32 */    "There are too many levels."
+/* 32 */    "There are too many levels.",
+/* 33 */    "There are too many dimensions in the array.",
+/* 34 */    "Array dimension must be greater than zero.",
+/* 35 */	"Missing ']'.",
+/* 36 */	"Missing array size.",
+/* 37 */	"Missing dimension in array element assignment."
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -123,7 +139,9 @@ int  kk;
 int  err;
 int  cx;         // index of current instruction to be generated.
 int  level = 0;
-int  tx = 0;
+int  tx = 0;	//current number of symbols in the symbol table
+struct array_info* pa; // pointer to the last array read
+int  arr_tx = 0; // current number of symbols in the array information table
 
 char line[80];
 
@@ -145,18 +163,24 @@ int wsym[NRW + 1] =
 int ssym[NSYM + 1] =
 {
 	SYM_NULL, SYM_PLUS, SYM_MINUS, SYM_TIMES, SYM_SLASH,
-	SYM_LPAREN, SYM_RPAREN, SYM_EQU, SYM_COMMA, SYM_PERIOD, SYM_SEMICOLON
+	SYM_LPAREN, SYM_RPAREN, SYM_EQU, SYM_COMMA, SYM_PERIOD, SYM_SEMICOLON,
+	SYM_AND, SYM_OR, SYM_NOT,
+	SYM_LBRACKET, SYM_RBRACKET, SYM_LBRACE, SYM_RBRACE
 };
 
 char csym[NSYM + 1] =
 {
-	' ', '+', '-', '*', '/', '(', ')', '=', ',', '.', ';'
+	' ', '+', '-', '*', '/', '(', ')', '=', ',', '.', ';',
+	'&', '|', '!',
+	'[', ']', '{', '}'
 };
 
-#define MAXINS   8
+#define MAXINS   13
 char* mnemonic[MAXINS] =
 {
-	"LIT", "OPR", "LOD", "STO", "CAL", "INT", "JMP", "JPC"
+	"LIT", "OPR", "LOD", "STO", "CAL", "INT", "JMP", "JPC" , 
+	"JPC1", "JPC2",
+	"LEA", "STA", "LDA"
 };
 
 typedef struct
@@ -166,7 +190,7 @@ typedef struct
 	int  value;
 } comtab;
 
-comtab table[TXMAX];
+comtab table[TXMAX];	// symbol table
 
 typedef struct
 {
@@ -177,5 +201,15 @@ typedef struct
 } mask;
 
 FILE* infile;
+
+typedef struct array_info	// array information
+{
+	int address;
+	int size;	//total size?
+	int dim;	//total dimension
+	int dim_size[MAXDIM+1];
+} array_info;
+
+array_info array_table[TXMAX];	// array information table
 
 // EOF PL0.h

@@ -249,26 +249,28 @@ void enter(int kind)
 
 	tx++;
 	strcpy(table[tx].name, id);
+	printf("id: %s\n", id);
+	printf("tx: %d\n", tx);
 	table[tx].kind = kind;
 	switch (kind)
 	{
-	case ID_CONSTANT:
-		if (num > MAXADDRESS)
-		{
-			error(25); // The number is too great.
-			num = 0;
-		}
-		table[tx].value = num;
-		break;
-	case ID_VARIABLE:
-		mk = (mask*) &table[tx];
-		mk->level = level;
-		mk->address = dx++;
-		break;
-	case ID_PROCEDURE:
-		mk = (mask*) &table[tx];
-		mk->level = level;
-		break;
+		case ID_CONSTANT:
+			if (num > MAXADDRESS)
+			{
+				error(25); // The number is too great.
+				num = 0;
+			}
+			table[tx].value = num;
+			break;
+		case ID_VARIABLE:
+			mk = (mask*) &table[tx];
+			mk->level = level;
+			mk->address = dx++;
+			break;
+		case ID_PROCEDURE:
+			mk = (mask*) &table[tx];
+			mk->level = level;
+			break;
 	} // switch
 } // enter
 
@@ -615,8 +617,38 @@ void statement(symset fsys)
 			}
 			else if (table[i].kind == ID_PROCEDURE)
 			{
-				mask* mk;
-				mk = (mask*) &table[i];
+				// mask* mk;
+				// mk = (mask*) &table[i];
+				// gen(CAL, level - mk->level, mk->address);
+				getsym();
+				mask* mk = (mask*)&table[i];
+				// printf("table[i].: %s\n", table[i].name);
+				int paramCount = 0;
+				printf("sym: %d\n", sym);
+				if (sym == SYM_LPAREN) {
+					getsym();
+					while (sym == SYM_IDENTIFIER || sym == SYM_NUMBER) {
+						printf("sym:before %d\n", sym);
+						paramCount++;
+						printf("paramCount: %d\n", paramCount);
+						expression(fsys);
+						if (sym == SYM_COMMA) {
+							getsym();
+						}
+						printf("sym:after %d\n", sym);
+					}
+					if (sym == SYM_RPAREN) {
+						getsym();
+					} else {
+						printf("sym: %d\n", sym);
+						error(22); // Missing ')'.
+					}
+				}
+				if (paramCount != mk->paramCount) {
+					printf("paramCount: %d, mk->paramCount: %d\n", paramCount, mk->paramCount);
+					error(33); // Parameter count mismatch.
+					
+				}
 				gen(CAL, level - mk->level, mk->address);
 			}
 			else
@@ -844,19 +876,89 @@ void block(symset fsys)
 			while (sym == SYM_IDENTIFIER);
 		} // if
 		block_dx = dx; //save dx before handling procedure call!
+		// while (sym == SYM_PROCEDURE)
+		// { // procedure declarations
+		// 	getsym();
+		// 	if (sym == SYM_IDENTIFIER)
+		// 	{
+		// 		enter(ID_PROCEDURE);
+		// 		getsym();
+		// 	}
+		// 	else
+		// 	{
+		// 		error(4); // There must be an identifier to follow 'const', 'var', or 'procedure'.
+		// 	}
+
+
+		// 	if (sym == SYM_SEMICOLON)
+		// 	{
+		// 		getsym();
+		// 	}
+		// 	else
+		// 	{
+		// 		error(5); // Missing ',' or ';'.
+		// 	}
+
+		// 	level++;
+		// 	savedTx = tx;
+		// 	set1 = createset(SYM_SEMICOLON, SYM_NULL);
+		// 	set = uniteset(set1, fsys);
+		// 	block(set);
+		// 	destroyset(set1);
+		// 	destroyset(set);
+		// 	tx = savedTx;
+		// 	level--;
+
+		// 	if (sym == SYM_SEMICOLON)
+		// 	{
+		// 		getsym();
+		// 		set1 = createset(SYM_IDENTIFIER, SYM_PROCEDURE, SYM_NULL);
+		// 		set = uniteset(statbegsys, set1);
+		// 		test(set, fsys, 6);
+		// 		destroyset(set1);
+		// 		destroyset(set);
+		// 	}
+		// 	else
+		// 	{
+		// 		error(5); // Missing ',' or ';'.
+		// 	}
+		// } // while
 		while (sym == SYM_PROCEDURE)
 		{ // procedure declarations
 			getsym();
 			if (sym == SYM_IDENTIFIER)
 			{
-				enter(ID_PROCEDURE);
+
+				// printf("tx: %d\n", tx);
 				getsym();
+				enter(ID_PROCEDURE);
+				mask *mk = (mask*)&table[tx];
+				mk->paramCount = 0;
+				level++;      
+				savedTx = tx;
+				if (sym == SYM_LPAREN) {
+					getsym();
+					while (sym == SYM_IDENTIFIER) {
+						mk->paramTypes[mk->paramCount++] = ID_VARIABLE;
+						enter(ID_VARIABLE);
+						getsym();
+						if (sym == SYM_COMMA) {
+							getsym();
+						}
+					}
+					if (sym == SYM_RPAREN) {
+						getsym();
+					} else {
+						error(22); // Missing ')'.
+					}
+				}
+				// printf("paramCount: %d\n", mk->paramCount);
+
 			}
 			else
 			{
 				error(4); // There must be an identifier to follow 'const', 'var', or 'procedure'.
 			}
-
 
 			if (sym == SYM_SEMICOLON)
 			{
@@ -866,9 +968,6 @@ void block(symset fsys)
 			{
 				error(5); // Missing ',' or ';'.
 			}
-
-			level++;
-			savedTx = tx;
 			set1 = createset(SYM_SEMICOLON, SYM_NULL);
 			set = uniteset(set1, fsys);
 			block(set);
@@ -891,6 +990,8 @@ void block(symset fsys)
 				error(5); // Missing ',' or ';'.
 			}
 		} // while
+
+
 		dx = block_dx; //restore dx after handling procedure call!
 		set1 = createset(SYM_IDENTIFIER, SYM_NULL);
 		set = uniteset(statbegsys, set1);

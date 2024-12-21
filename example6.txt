@@ -1,0 +1,9 @@
+var i;
+procedure p(a);
+begin
+  i := a;
+end;
+begin
+  i := 1;
+  call p(2;);
+end.

@@ -17,7 +17,7 @@
 enum symtype
 {
 	SYM_NULL,
-	SYM_IDENTIFIER,
+	SYM_IDENTIFIER,//1
 	SYM_NUMBER,
 	SYM_PLUS,
 	SYM_MINUS,
@@ -26,17 +26,17 @@ enum symtype
 	SYM_ODD,
 	SYM_EQU,
 	SYM_NEQ,
-	SYM_LES,
+	SYM_LES,//10
 	SYM_LEQ,
 	SYM_GTR,
 	SYM_GEQ,
 	SYM_LPAREN,
 	SYM_RPAREN,
 	SYM_COMMA,
-	SYM_SEMICOLON,
+	SYM_SEMICOLON,//17
 	SYM_PERIOD,
 	SYM_BECOMES,
-    SYM_BEGIN,
+    SYM_BEGIN,//20
 	SYM_END,
 	SYM_IF,
 	SYM_THEN,
@@ -117,7 +117,8 @@ char* err_msg[] =
 /* 29 */    "",
 /* 30 */    "",
 /* 31 */    "Missing 'endswitch'",
-/* 32 */    "There are too many levels."
+/* 32 */    "There are too many levels.",
+/* 33 */    "Parameter count mismatch."
 };
 
 //////////////////////////////////////////////////////////////////////
@@ -177,6 +178,8 @@ typedef struct
 	char name[MAXIDLEN + 1];
 	int  kind;
 	int  value;
+	int paramCount; // 新增：参数个数
+    int paramTypes[MAXIDLEN]; // 新增：参数类型
 } comtab;
 
 comtab table[TXMAX];
@@ -187,6 +190,8 @@ typedef struct
 	int   kind;
 	short level;
 	short address;
+	int paramCount; // 新增：参数个数
+    int paramTypes[MAXIDLEN]; // 新增：参数类型
 } mask;
 
 FILE* infile;

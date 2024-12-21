@@ -1,16 +1,16 @@
 #include <stdio.h>
 
-#define NRW        11     // number of reserved words
+#define NRW        15     // number of reserved words
 #define TXMAX      500    // length of identifier table
 #define MAXNUMLEN  14     // maximum number of digits in numbers
-#define NSYM       10     // maximum number of symbols in array ssym and csym
+#define NSYM       13     // maximum number of symbols in array ssym and csym
 #define MAXIDLEN   10     // length of identifiers
 
 #define MAXADDRESS 32767  // maximum address
 #define MAXLEVEL   32     // maximum depth of nesting block
 #define CXMAX      500    // size of code array
 
-#define MAXSYM     30     // maximum number of symbols  
+#define MAXSYM     33     // maximum number of symbols  
 
 #define STACKSIZE  1000   // maximum storage
 
@@ -45,7 +45,14 @@ enum symtype
 	SYM_CALL,
 	SYM_CONST,
 	SYM_VAR,
-	SYM_PROCEDURE
+	SYM_PROCEDURE,
+	SYM_AND,
+	SYM_OR,
+	SYM_NOT,
+	SYM_SWITCH,
+	SYM_CASE,
+	SYM_DEFAULT,
+	SYM_ENDSWITCH,
 };
 
 enum idtype
@@ -55,7 +62,8 @@ enum idtype
 
 enum opcode
 {
-	LIT, OPR, LOD, STO, CAL, INT, JMP, JPC
+	LIT, OPR, LOD, STO, CAL, INT, JMP, JPC, JPC1, JPC2,
+	CPY
 };
 
 enum oprcode
@@ -63,7 +71,7 @@ enum oprcode
 	OPR_RET, OPR_NEG, OPR_ADD, OPR_MIN,
 	OPR_MUL, OPR_DIV, OPR_ODD, OPR_EQU,
 	OPR_NEQ, OPR_LES, OPR_LEQ, OPR_GTR,
-	OPR_GEQ
+	OPR_GEQ, OPR_AND, OPR_OR, OPR_NOT
 };
 
 
@@ -96,19 +104,19 @@ char* err_msg[] =
 /* 16 */    "'then' expected.",
 /* 17 */    "';' or 'end' expected.",
 /* 18 */    "'do' expected.",
-/* 19 */    ".",
+/* 19 */    "Incorrect symbol.",
 /* 20 */    "Relative operators expected.",
 /* 21 */    "Procedure identifier can not be in an expression.",
 /* 22 */    "Missing ')'.",
 /* 23 */    "The symbol can not be followed by a factor.",
 /* 24 */    "The symbol can not be as the beginning of an expression.",
 /* 25 */    "The number is too great.",
-/* 26 */    "",
+/* 26 */    "'while' execpted",
 /* 27 */    "",
 /* 28 */    "",
 /* 29 */    "",
 /* 30 */    "",
-/* 31 */    "",
+/* 31 */    "Missing 'endswitch'",
 /* 32 */    "There are too many levels."
 };
 
@@ -133,30 +141,35 @@ char* word[NRW + 1] =
 {
 	"", /* place holder */
 	"begin", "call", "const", "do", "end","if",
-	"odd", "procedure", "then", "var", "while"
+	"odd", "procedure", "then", "var", "while", 
+	"switch", "case", "default", "endswitch"
 };
 
 int wsym[NRW + 1] =
 {
 	SYM_NULL, SYM_BEGIN, SYM_CALL, SYM_CONST, SYM_DO, SYM_END,
-	SYM_IF, SYM_ODD, SYM_PROCEDURE, SYM_THEN, SYM_VAR, SYM_WHILE
+	SYM_IF, SYM_ODD, SYM_PROCEDURE, SYM_THEN, SYM_VAR, SYM_WHILE,
+	SYM_SWITCH, SYM_CASE, SYM_DEFAULT, SYM_ENDSWITCH
 };
 
 int ssym[NSYM + 1] =
 {
 	SYM_NULL, SYM_PLUS, SYM_MINUS, SYM_TIMES, SYM_SLASH,
-	SYM_LPAREN, SYM_RPAREN, SYM_EQU, SYM_COMMA, SYM_PERIOD, SYM_SEMICOLON
+	SYM_LPAREN, SYM_RPAREN, SYM_EQU, SYM_COMMA, SYM_PERIOD, SYM_SEMICOLON,
+	SYM_AND, SYM_OR, SYM_NOT
 };
 
 char csym[NSYM + 1] =
 {
-	' ', '+', '-', '*', '/', '(', ')', '=', ',', '.', ';'
+	' ', '+', '-', '*', '/', '(', ')', '=', ',', '.', ';',
+	'&', '|', '!'
 };
 
-#define MAXINS   8
+#define MAXINS   11
 char* mnemonic[MAXINS] =
 {
-	"LIT", "OPR", "LOD", "STO", "CAL", "INT", "JMP", "JPC"
+	"LIT", "OPR", "LOD", "STO", "CAL", "INT", "JMP", "JPC" , "JPC1", "JPC2",
+	"CPY"
 };
 
 typedef struct
@@ -178,4 +191,3 @@ typedef struct
 
 FILE* infile;
 
-// EOF PL0.h

@@ -249,8 +249,8 @@ void enter(int kind)
 
 	tx++;
 	strcpy(table[tx].name, id);
-	printf("id: %s\n", id);
-	printf("tx: %d\n", tx);
+	// printf("id: %s\n", id);
+	// printf("tx: %d\n", tx);
 	table[tx].kind = kind;
 	switch (kind)
 	{
@@ -569,6 +569,47 @@ void condition(symset fsys)
 } // condition
 
 //////////////////////////////////////////////////////////////////////
+void call(int i, symset fsys)
+{
+	getsym();
+	mask* mk = (mask*)&table[i];
+	// printf("mk->address: %d\n", mk->address);
+	// printf("table[i].: %s\n", table[i].name);
+	int paramCount = 0;
+	// printf("sym: %d\n", sym);
+	if (sym == SYM_LPAREN) {
+		getsym();
+		while (sym == SYM_IDENTIFIER || sym == SYM_NUMBER) {
+			// printf("sym:before %d\n", sym);
+			paramCount++;
+			// printf("paramCount: %d\n", paramCount);
+			symset set = createset(SYM_COMMA, SYM_RPAREN, SYM_NULL);
+			expression(set);
+			destroyset(set);
+			if (sym == SYM_COMMA) {
+				getsym();
+			}		
+			// printf("sym:after %d\n", sym);
+		}
+		if (sym == SYM_RPAREN) {
+			getsym();
+		} else {
+			// printf("sym: %d\n", sym);
+			error(22); // Missing ')'.
+		}
+	}
+	if (paramCount != mk->paramCount) {
+		// printf("paramCount: %d, mk->paramCount: %d\n", paramCount, mk->paramCount);
+		error(33); // Parameter count mismatch.
+	}
+
+	gen(PAS, 0, paramCount);
+	gen(CAL, level - mk->level, mk->address);
+
+	// printf("mk0=->name: %s\n", mk->name);
+	// printf("mk->address: %d\n", mk->address);
+	
+} // call
 void statement(symset fsys)
 {
 	int i, cx1, cx2;
@@ -619,43 +660,13 @@ void statement(symset fsys)
 			{
 				// mask* mk;
 				// mk = (mask*) &table[i];
-				// gen(CAL, level - mk->level, mk->address);
-				getsym();
-				mask* mk = (mask*)&table[i];
-				// printf("table[i].: %s\n", table[i].name);
-				int paramCount = 0;
-				printf("sym: %d\n", sym);
-				if (sym == SYM_LPAREN) {
-					getsym();
-					while (sym == SYM_IDENTIFIER || sym == SYM_NUMBER) {
-						printf("sym:before %d\n", sym);
-						paramCount++;
-						printf("paramCount: %d\n", paramCount);
-						expression(fsys);
-						if (sym == SYM_COMMA) {
-							getsym();
-						}
-						printf("sym:after %d\n", sym);
-					}
-					if (sym == SYM_RPAREN) {
-						getsym();
-					} else {
-						printf("sym: %d\n", sym);
-						error(22); // Missing ')'.
-					}
-				}
-				if (paramCount != mk->paramCount) {
-					printf("paramCount: %d, mk->paramCount: %d\n", paramCount, mk->paramCount);
-					error(33); // Parameter count mismatch.
-					
-				}
-				gen(CAL, level - mk->level, mk->address);
+				// gen(CAL, level - mk->level, mk->address);	
+				call(i, fsys);
 			}
 			else
 			{
 				error(15); // A constant or variable can not be called.
 			}
-			getsym();
 		}
 	}
 	else if (sym == SYM_IF)
@@ -687,6 +698,7 @@ void statement(symset fsys)
 		statement(set);
 		while (sym == SYM_SEMICOLON || inset(sym, statbegsys))
 		{
+			// printf("sym: %d\n", sym);
 			if (sym == SYM_SEMICOLON)
 			{
 				getsym();
@@ -811,7 +823,7 @@ void statement(symset fsys)
 } // statement
 
 //////////////////////////////////////////////////////////////////////
-void block(symset fsys)
+void block(symset fsys, int paraCount)
 {
 	int cx0; // initial code index
 	mask* mk;
@@ -819,12 +831,32 @@ void block(symset fsys)
 	int savedTx;
 	symset set1, set;
 
-	dx = 3;
+	// dx = 3 + paraCount;
+	// block_dx = dx;
+	// if(tx==0) {
+	// 	mk = (mask*) &table[tx];
+	// 	mk->address = cx;
+
+	// 	// printf("cx: %d\n", cx);
+	// 	// printf("mk->name: %s\n", mk->name);
+	// 	gen(JMP, 0, 0);
+	// } else {
+	// 	int tx1 = tx;
+	// 	while(table[tx1].kind != ID_PROCEDURE) {
+	// 		tx1--;
+	// 	}
+	// 	mk = (mask*) &table[tx1];
+	// 	mk->address = cx;		
+		
+	// 	// printf("cx: %d\n", cx);
+	// 	// printf("mk->name: %s\n", mk->name);
+	// 	gen(JMP, 0, 0);
+	// }
+	dx = 3 + paraCount;
 	block_dx = dx;
-	mk = (mask*) &table[tx];
+	mk = (mask *)&table[tx - paraCount];
 	mk->address = cx;
-	gen(JMP, 0, 0);
-	if (level > MAXLEVEL)
+	gen(JMP, 0, 0);	if (level > MAXLEVEL)
 	{
 		error(32); // There are too many levels.
 	}
@@ -928,36 +960,35 @@ void block(symset fsys)
 			getsym();
 			if (sym == SYM_IDENTIFIER)
 			{
-
-				// printf("tx: %d\n", tx);
 				getsym();
 				enter(ID_PROCEDURE);
-				mask *mk = (mask*)&table[tx];
-				mk->paramCount = 0;
-				level++;      
-				savedTx = tx;
-				if (sym == SYM_LPAREN) {
-					getsym();
-					while (sym == SYM_IDENTIFIER) {
-						mk->paramTypes[mk->paramCount++] = ID_VARIABLE;
-						enter(ID_VARIABLE);
-						getsym();
-						if (sym == SYM_COMMA) {
-							getsym();
-						}
-					}
-					if (sym == SYM_RPAREN) {
-						getsym();
-					} else {
-						error(22); // Missing ')'.
-					}
-				}
 				// printf("paramCount: %d\n", mk->paramCount);
 
 			}
 			else
 			{
 				error(4); // There must be an identifier to follow 'const', 'var', or 'procedure'.
+			}
+			mask *mk = (mask*)&table[tx];
+			mk->paramCount = 0;
+			level++;      
+			savedTx = tx;
+			dx = 3;
+			if (sym == SYM_LPAREN) {
+				getsym();
+				while (sym == SYM_IDENTIFIER) {
+					mk->paramTypes[mk->paramCount++] = ID_VARIABLE;
+					enter(ID_VARIABLE);
+					getsym();
+					if (sym == SYM_COMMA) {
+						getsym();
+					}
+				}
+				if (sym == SYM_RPAREN) {
+					getsym();
+				} else {
+					error(22); // Missing ')'.
+				}
 			}
 
 			if (sym == SYM_SEMICOLON)
@@ -968,9 +999,10 @@ void block(symset fsys)
 			{
 				error(5); // Missing ',' or ';'.
 			}
+
 			set1 = createset(SYM_SEMICOLON, SYM_NULL);
 			set = uniteset(set1, fsys);
-			block(set);
+			block(set,mk->paramCount);
 			destroyset(set1);
 			destroyset(set);
 			tx = savedTx;
@@ -1004,7 +1036,9 @@ void block(symset fsys)
 	code[mk->address].a = cx;
 	mk->address = cx;
 	cx0 = cx;
+	block_dx += paraCount;
 	gen(INT, 0, block_dx);
+
 	set1 = createset(SYM_SEMICOLON, SYM_END, SYM_ENDSWITCH, SYM_NULL);
 	set = uniteset(set1, fsys);
 	statement(set);
@@ -1034,16 +1068,26 @@ void interpret()
 	int top;       // top of stack
 	int b;         // program, base, and top-stack register
 	instruction i; // instruction register
+	int k;
 
 	printf("Begin executing PL/0 program.\n");
 
+	for(k = 0; k<=top; k++)
+	{
+		printf("stack[%d]: %d\n", k, stack[k]);
+	}
 	pc = 0;
 	b = 1;
 	top = 3;
 	stack[1] = stack[2] = stack[3] = 0;
 	do
 	{
-		//printf("stack: %d opcode: %d pc:%d\n",stack[top], i.f,pc);
+		// printf("stack: %d opcode: %d pc:%d\n",stack[top], i.f,pc);
+		// for(k = 0; k<=13; k++)
+		// {
+		// 	printf("stack[%d]: %d\n", k, stack[k]);
+		// }
+		// printf("top: %d\n", top);
 		i = code[pc++];
 		switch (i.f)
 		{
@@ -1125,6 +1169,7 @@ void interpret()
 			break;
 		case LOD:
 			stack[++top] = stack[base(stack, b, i.l) + i.a];
+			// printf("base: %d\n", base(stack, b, i.l));
 			break;
 		case STO:
 			stack[base(stack, b, i.l) + i.a] = stack[top];
@@ -1138,6 +1183,13 @@ void interpret()
 			stack[top + 3] = pc;
 			b = top + 1;
 			pc = i.a;
+			break;
+		case PAS:
+			for (k = i.a; k > 0; k--)
+			{
+				stack[top + 3] = stack[top];
+				top--;
+			}
 			break;
 		case INT:
 			top += i.a;
@@ -1202,7 +1254,7 @@ void main ()
 	set1 = createset(SYM_PERIOD, SYM_NULL);
 	set2 = uniteset(declbegsys, statbegsys);
 	set = uniteset(set1, set2);
-	block(set);
+	block(set,0);
 	destroyset(set1);
 	destroyset(set2);
 	destroyset(set);

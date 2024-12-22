@@ -42,7 +42,7 @@ enum symtype
 	SYM_THEN,
 	SYM_WHILE,
 	SYM_DO,
-	SYM_CALL,
+	SYM_CALL, //26
 	SYM_CONST,
 	SYM_VAR,
 	SYM_PROCEDURE,
@@ -63,7 +63,7 @@ enum idtype
 enum opcode
 {
 	LIT, OPR, LOD, STO, CAL, INT, JMP, JPC, JPC1, JPC2,
-	CPY
+	CPY,PAS
 };
 
 enum oprcode
@@ -166,11 +166,11 @@ char csym[NSYM + 1] =
 	'&', '|', '!'
 };
 
-#define MAXINS   11
+#define MAXINS   12
 char* mnemonic[MAXINS] =
 {
 	"LIT", "OPR", "LOD", "STO", "CAL", "INT", "JMP", "JPC" , "JPC1", "JPC2",
-	"CPY"
+	"CPY", "PAS"
 };
 
 typedef struct

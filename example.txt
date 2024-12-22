@@ -2,4 +2,15 @@ var i,j;
 begin
   i := -1;
   j := i + 1;
-end.
+  for i:=0;i<10;i:=i+1
+  begin
+    j := i + 1;
+  end;  
+  exit;
+  if i = 1 then
+  j := 2;
+  elif i = 10 then
+  j := 11;
+  else
+  j := 0;
+  end.

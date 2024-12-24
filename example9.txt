@@ -1,0 +1,58 @@
+var i, j, k, a[2][3], b[3][2], c[2][2];
+begin
+    i:=0;
+    j:=0;
+    while i<2 do
+    begin
+        while j<3 do
+        begin
+            a[i][j]:= 3*i + j + 1;
+            j:= j+1;
+        end;
+        j:=0;
+        i:= i+1;
+    end;
+    i:=0;
+
+    while i<3 do
+    begin
+        while j<2 do
+        begin
+            b[i][j]:= 2*i + j + 1;
+            j:= j+1;
+        end;
+        j:=0;
+        i:= i+1;
+    end;
+
+    i:=0;
+    j:=0;
+    while i<2 do
+    begin 
+        while j<2 do
+        begin
+            c[i][j]:=0;
+            j:=j+1;
+        end;
+        j:=0;
+        i:=i+1;
+    end;
+
+    i:=0;
+    k:=0;
+    while i<2 do
+    begin
+        while j<2 do
+        begin
+            while k<3 do
+            begin
+                c[i][j]:= c[i][j] + a[i][k]*b[k][j];
+                k:=k+1;
+            end;
+            k:=0;
+            j:= j+1;
+        end;
+        j:=0;
+        i:= i+1;
+    end;
+end.

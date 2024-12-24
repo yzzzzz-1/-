@@ -1,0 +1,9 @@
+var i,j;
+begin
+  i := 2;
+  j := 0;
+  if i && i=j && !j || i || j then i:= 1958;
+  if !i || i>=1958 && j && i || j  then j:= 8848;
+  if i >= 1958 || j > 8848 && i > j then i:= 0;
+  if i>=1958 then i:=9999;
+end.

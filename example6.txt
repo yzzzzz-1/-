@@ -1,0 +1,9 @@
+var a, b, c; 
+begin 
+  a := 7; b := 10;
+  c := b - a; 
+  do begin 
+  b := b - 2; 
+  end  while b - a> 0;
+  a := a+b; 
+end.

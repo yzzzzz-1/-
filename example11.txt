@@ -1,16 +1,16 @@
-var i;
-procedure p;
-var a;
+var i,j;
+procedure p(a);
 begin
-  a := 2;
   i := a;
+  return i;
 end;
 procedure q;
 begin
-  i := i + 1;
+  i := 3;
 end;
+
 begin
   i := 1;
-  call p;
   call q;
+  j := p(2)*3;
 end.

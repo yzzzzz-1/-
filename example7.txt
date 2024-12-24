@@ -1,0 +1,45 @@
+var a, b, c, d; 
+begin 
+  a := 2; b := 0;
+  c := 0; 
+  switch a
+    case 1 begin
+        b:=3;
+        c:=10;
+    end
+    case 2 begin
+        b:=2;
+        c:=10;
+    end
+    case 3 begin
+        b:=1;
+        c:=10;
+    end
+  endswitch;
+  switch a+b
+    case c-7 begin
+        d:=1;
+    end
+    case c-6 begin
+        d:=2;
+    end
+    case c-5 begin
+        d:=3;
+    end
+    default 
+        d:=5;
+  endswitch;
+  switch c
+    case 1 begin
+        d:=6;
+    end
+    case 2 begin
+        d:=7;
+    end
+    case 3 begin
+        d:=8;
+    end
+    default 
+        d:=9;
+  endswitch; 
+end.

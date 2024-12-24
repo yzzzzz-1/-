@@ -1,0 +1,18 @@
+var i,j;
+procedure p(a,b);
+var c;
+begin
+  c := a + b;
+  return c;
+end;
+procedure q(a);
+begin
+  a := a+1;
+  return a;
+end;
+
+begin
+  i := 1;
+  j := 120;
+  i := i+p(j+4,q(5));
+end.

@@ -1,9 +1,0 @@
-var i,j;
-begin
-  i := -1;/*shciohc*/
-  j := i + 1;//qwihfoq
-//cmpoqjc
-/*guiad*/
-/*cw
-xx*/
-end.

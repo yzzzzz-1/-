@@ -1,9 +1,0 @@
-var i,j,k;
-begin
-  i := 10;/*vusivf*/
-  j := 5;/* x=a*b */
-  k:=i/j;//xuohi
-//xuibx
-/*uhsi
-hiioh*/
-end.
